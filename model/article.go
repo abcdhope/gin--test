@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 //文章内容
 type Article struct {
-	Category Category
+	Category Category `gorm:"foreignkey:Cid"`
 	gorm.Model
 	//标题
 	Title string `gorm:"type:varchar(100);not null" json:"title"`

@@ -3,7 +3,7 @@ package model
 import "gorm.io/gorm"
 
 type User struct {
-	gorm.Model
+	gorm.Model // 使用 ID 作为主键
 	//用户名
 	Username string `gorm:"type:varchar(20);not null" json:"username"`
 	//密码

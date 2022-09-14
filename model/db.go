@@ -35,7 +35,7 @@ func InitDb() {
 		os.Exit(1) //强制退出程序
 	}
 	//设置数据库参数,迁移模型
-	db.AutoMigrate(&User{}, &Article{}, &Category{})
+	_ = db.AutoMigrate(&User{}, &Article{}, &Category{})
 
 	// 获取通用数据库对象 sql.DB ，然后使用其提供的功能
 	sqlDB, _ := db.DB()
