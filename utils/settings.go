@@ -21,7 +21,7 @@ var (
 func init() {
 	file, err := ini.Load("config/config.ini")
 	if err != nil {
-		fmt.Println("读取配置信息错误")
+		fmt.Println("读取配置信息错误: ", err)
 	}
 	loadServer(file)
 	loadDatabase(file)
