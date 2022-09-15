@@ -1,8 +1,8 @@
 package routes
 
 import (
+	v1 "ginblogtest/api/v1"
 	"ginblogtest/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,13 +13,10 @@ func InitRouter() {
 	r := gin.Default()         //也可以用gin.New()，区别在于Default自带两个中间件
 
 	//路由组，用于处理逻辑
-	router := r.Group("api/v1")
+	routerv1 := r.Group("api/v1")
 	{
-		router.GET("hello", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"msg": "ok",
-			})
-		})
+		routerv1.POST("user/add", v1.AddUser)
+		routerv1.GET("users", v1.GetUsers)
 	}
 	// fmt.Println(utils.HttpPort)
 	r.Run(utils.HttpPort)
