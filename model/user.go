@@ -2,7 +2,9 @@ package model
 
 import (
 	"ginblogtest/routes/errmsg"
+	"log"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +13,7 @@ type User struct {
 	//用户名
 	Username string `gorm:"type:varchar(20);not null" json:"username"`
 	//密码
-	Password string `gorm:"type:varchar(20);not null" json:"password"`
+	Password string `gorm:"type:varchar(200);not null" json:"password"`
 	//角色码，区分管理员和普通用户
 	Role int `gorm:"type:int;not null" json:"role"`
 }
@@ -24,6 +26,20 @@ func CheckUser(name string) int {
 	//如果存在该用户则表示已经被抢注了
 	if user.ID > 0 {
 		return errmsg.ERROR_USERNAME_USED
+	}
+	return errmsg.SUCCSE
+}
+
+//判断需要更改信息的用户与数据库的用户是否一致
+func CheckUpUser(id int, name string) int {
+	var user User
+	db.Select("id").Where("username=?", name).First(&user)
+	//如果更新除名字以外的内容，则判断名字所属的id是否相同
+	if user.ID == uint(id) {
+		return errmsg.SUCCSE
+	}
+	if user.ID > 0 {
+		return errmsg.ERROR_USERNAME_USED //1001
 	}
 	return errmsg.SUCCSE
 }
@@ -81,12 +97,86 @@ func EditUser(id int, data *User) int {
 	return errmsg.SUCCSE
 }
 
+// ChangePassword 修改密码
+func ChangePassword(id int, data *User) int {
+
+	err = db.Select("password").Where("id = ?", id).Updates(&data).Error
+	if err != nil {
+		return errmsg.ERROR
+	}
+	return errmsg.SUCCSE
+}
+
 //删除用户
 func DeleteUser(id int) int {
 	var user User
+	//判断数据库是否存在该id
+	if db.Where("id = ?", id).First(&user).RowsAffected < 1 {
+		return errmsg.ERROR_USER_NOT_EXIST
+	}
 	err := db.Where("id = ?", id).Delete(&user).Error
 	if err != nil {
 		return errmsg.ERROR
 	}
 	return errmsg.SUCCSE
+}
+
+//密码加密策略
+func (u *User) BeforeCreate(_ *gorm.DB) (err error) {
+	u.Password = ScryptPw(u.Password)
+	u.Role = 2
+	return nil
+}
+
+func (u *User) BeforeUpdate(_ *gorm.DB) (err error) {
+	u.Password = ScryptPw(u.Password)
+	return nil
+}
+
+//加密
+func ScryptPw(password string) string {
+	const cost = 10
+	HashPw, err := bcrypt.GenerateFromPassword([]byte(password), cost)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(HashPw)
+}
+
+// CheckLogin 后台登录验证
+func CheckLogin(username string, password string) (User, int) {
+	var user User
+	var PasswordErr error
+
+	db.Where("username = ?", username).First(&user)
+
+	PasswordErr = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+
+	if user.ID == 0 {
+		return User{}, errmsg.ERROR_USER_NOT_EXIST
+	}
+	if PasswordErr != nil {
+		return User{}, errmsg.ERROR_PASSWORD_WRONG
+	}
+	if user.Role != 1 {
+		return User{}, errmsg.ERROR_USER_NO_RIGHT
+	}
+	return user, errmsg.SUCCSE
+}
+
+// CheckLoginFront 前台登录
+func CheckLoginFront(username string, password string) (User, int) {
+	var user User
+	var PasswordErr error
+
+	db.Where("username = ?", username).First(&user)
+
+	PasswordErr = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if user.ID == 0 {
+		return user, errmsg.ERROR_USER_NOT_EXIST
+	}
+	if PasswordErr != nil {
+		return user, errmsg.ERROR_PASSWORD_WRONG
+	}
+	return user, errmsg.SUCCSE
 }
