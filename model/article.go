@@ -12,7 +12,7 @@ type Article struct {
 	gorm.Model
 	//标题
 	Title string `gorm:"type:varchar(100);not null" json:"title"`
-	//文章类型的序号
+	//文章类型的序号，等于Category里的ID
 	Cid int `gorm:"type:int;not null" json:"cid"`
 	//文章描述
 	Desc string `gorm:"type:varchar(200)" json:"desc"`
@@ -39,9 +39,9 @@ func CreateArt(data *Article) int {
 func GetCateArt(id int, pagesize int, pagenum int) ([]Article, int64, int) {
 	var arts []Article
 	var total int64
-	//Preload预加载，从Category中再筛选
-	err := db.Preload("Category").Limit(pagesize).Offset((pagenum-1)*pagesize).Where("cid = ?", id).Find(&arts).Error
-	db.Model(&arts).Where("cid = ?", id).Count(&total)
+	//Preload预加载，将Category里的值加载出来
+	err := db.Preload("Category").Limit(pagesize).Offset((pagenum-1)*pagesize).Where("cid = ?", id).Find(&arts).Count(&total).Error
+	// db.Model(&arts).Where("cid = ?", id).Count(&total)
 	if err != nil {
 		return nil, 0, errmsg.ERROR_CATE_NOT_EXIST
 	}
@@ -65,8 +65,8 @@ func GetArtInfo(id int) (Article, int) {
 func GetArt(pageSize, pageNum int) ([]Article, int64, int) {
 	var arts []Article
 	var total int64
-	err := db.Select("article.id, title, img, created_at, updated_at, `desc`, comment_count, read_count, category.name").Limit(pageSize).Offset((pageNum - 1) * pageSize).Joins("Category").Find(&arts).Error
-	db.Model(&arts).Count(&total)
+	err := db.Select("article.id, title, img, created_at, updated_at, `desc`, comment_count, read_count, category.name").Limit(pageSize).Offset((pageNum - 1) * pageSize).Joins("Category").Find(&arts).Count(&total).Error
+	// db.Model(&arts).Count(&total)
 	if err != nil {
 		return nil, 0, errmsg.ERROR
 	}
@@ -77,8 +77,8 @@ func GetArt(pageSize, pageNum int) ([]Article, int64, int) {
 func SearchArticle(title string, pageSize int, pageNum int) ([]Article, int64, int) {
 	var arts []Article
 	var total int64
-	err := db.Select("article.id,title, img, created_at, updated_at, `desc`, comment_count, read_count, Category.name").Order("created_at DESC").Joins("Category").Where("title LIKE ?", title+"%").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&arts).Error
-	db.Model(&arts).Where("title LIKE ?", title+"%").Count(&total)
+	err := db.Select("article.id,title, img, created_at, updated_at, `desc`, comment_count, read_count, Category.name").Order("created_at DESC").Joins("Category").Where("title LIKE ?", title+"%").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&arts).Count(&total).Error
+	// db.Model(&arts).Where("title LIKE ?", title+"%").Count(&total)
 	if err != nil {
 		return nil, 0, errmsg.ERROR
 	}

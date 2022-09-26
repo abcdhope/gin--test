@@ -11,6 +11,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//后台登录
+func Login(c *gin.Context) {
+	var formData model.User
+	_ = c.ShouldBindJSON(&formData)
+	//检查账号和密码是否正确
+	user, code := model.CheckLogin(formData.Username, formData.Password)
+	if code != errmsg.SUCCSE {
+		c.JSON(
+			http.StatusOK, gin.H{
+				"status":  code,
+				"data":    formData.Username,
+				"id":      formData.ID,
+				"message": errmsg.GetErrMsg(code),
+			})
+	} else {
+		SetToken(c, user) //发送token
+	}
+}
+
+//前台登录
+func LoginFront(c *gin.Context) {
+	var formData model.User
+	_ = c.ShouldBindJSON(&formData)
+	var code int
+
+	formData, code = model.CheckLoginFront(formData.Username, formData.Password)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  code,
+		"data":    formData.Username,
+		"id":      formData.ID,
+		"message": errmsg.GetErrMsg(code),
+	})
+}
+
 //生成token
 func SetToken(c *gin.Context, user model.User) {
 	j := middleware.NewJWT()
@@ -28,6 +63,7 @@ func SetToken(c *gin.Context, user model.User) {
 			"message": errmsg.GetErrMsg(errmsg.ERROR),
 			"token":   token,
 		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

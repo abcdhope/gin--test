@@ -3,6 +3,7 @@ package v1
 import (
 	"ginblogtest/model"
 	"ginblogtest/routes/errmsg"
+	"ginblogtest/validator"
 	"net/http"
 	"strconv"
 
@@ -14,6 +15,18 @@ func AddUser(c *gin.Context) {
 	var user model.User
 	//对表单进行校验，并传值到user
 	_ = c.ShouldBindJSON(&user)
+	//检查字段是否正确
+	msg, validCode := validator.Validate(&user)
+	if validCode != errmsg.SUCCSE {
+		c.JSON(
+			http.StatusOK, gin.H{
+				"status":  validCode,
+				"message": msg,
+			},
+		)
+		c.Abort()
+		return
+	}
 	//判断是否有该用户
 	code := model.CheckUser(user.Username)
 	if code == errmsg.SUCCSE {

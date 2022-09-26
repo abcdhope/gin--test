@@ -92,7 +92,7 @@ func EditCate(c *gin.Context) {
 	)
 }
 
-//删除用户对应的类别
+//删除类别
 func DeleteCate(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	code := model.DeleteCate(id)

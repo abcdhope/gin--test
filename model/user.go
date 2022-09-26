@@ -11,11 +11,11 @@ import (
 type User struct {
 	gorm.Model // 使用 ID 作为主键
 	//用户名
-	Username string `gorm:"type:varchar(20);not null" json:"username"`
+	Username string `gorm:"type:varchar(20);not null" json:"username" validate:"required,min=4,max=12" label:"用户名"`
 	//密码
-	Password string `gorm:"type:varchar(200);not null" json:"password"`
-	//角色码，区分管理员和普通用户
-	Role int `gorm:"type:int;not null" json:"role"`
+	Password string `gorm:"type:varchar(200);not null" json:"password" validate:"required,min=6,max=120" label:"密码"`
+	//角色码，区分管理员和普通用户，1是管理员，2以上是普通用户
+	Role int `gorm:"type:int;default:2" json:"role" validate:"required,gte=2" label:"角色码"`
 }
 
 //检查用户是否存在，返回状态码
@@ -59,7 +59,7 @@ func GetUser(id int) (User, int) {
 	//err := db.Limit(1).Where("ID = ?", id).Find(&user).Error
 	err := db.First(&user, id).Error
 	if err != nil {
-		return user, errmsg.ERROR
+		return User{}, errmsg.ERROR
 	}
 	return user, errmsg.SUCCSE
 }
@@ -70,16 +70,16 @@ func GetUsers(username string, pageSize int, pageNum int) ([]User, int64) {
 	var users []User
 	var total int64 //用户个数
 	if username != "" {
-		//查找当前页的所有用户
-		db.Select("id", "username", "role", "created_at").Where("username LIKE ?", username+"%").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&users)
+		//查找当前页的所有用户以及统计用户个数
+		db.Select("id", "username", "role", "created_at").Where("username LIKE ?", username+"%").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&users).Count(&total)
 		//统计用户个数
-		db.Model(&users).Where("username LIKE ?", username+"%").Count(&total)
+		// db.Model(&users).Where("username LIKE ?", username+"%").Count(&total)
 		return users, total
 	}
 	//查找当前页面的用户数量
-	db.Select("id", "username", "role", "created_at").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&users)
+	db.Select("id", "username", "role", "created_at").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&users).Count(&total)
 	// fmt.Println(users)
-	db.Model(&users).Count(&total) //所有用户的数量
+	// db.Model(&users).Count(&total) //所有用户的数量
 	return users, total
 }
 
@@ -152,12 +152,15 @@ func CheckLogin(username string, password string) (User, int) {
 
 	PasswordErr = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 
+	//用户不存在
 	if user.ID == 0 {
 		return User{}, errmsg.ERROR_USER_NOT_EXIST
 	}
+	//密码错误
 	if PasswordErr != nil {
 		return User{}, errmsg.ERROR_PASSWORD_WRONG
 	}
+	//管理员权限
 	if user.Role != 1 {
 		return User{}, errmsg.ERROR_USER_NO_RIGHT
 	}

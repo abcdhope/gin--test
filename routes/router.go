@@ -2,6 +2,7 @@ package routes
 
 import (
 	v1 "ginblogtest/api/v1"
+	"ginblogtest/middleware"
 	"ginblogtest/utils"
 
 	"github.com/gin-gonic/gin"
@@ -10,10 +11,15 @@ import (
 //设定路由规则
 func InitRouter() {
 	gin.SetMode(utils.AppMode) //设置运行模式
-	r := gin.Default()         //也可以用gin.New()，区别在于Default自带两个中间件
+	r := gin.New()             //也可以用gin.New()，区别在于Default自带两个中间件
+
+	r.Use(middleware.Logger())
+	r.Use(gin.Recovery())
+	r.Use(middleware.Cors())
 
 	//路由组，用于处理逻辑
 	auth := r.Group("api/v1")
+	auth.Use(middleware.JwtToken())
 	{
 		// 用户模块的路由接口
 		auth.GET("admin/users", v1.GetUsers)
@@ -48,6 +54,10 @@ func InitRouter() {
 		router.GET("article", v1.GetArt)
 		router.GET("article/list/:id", v1.GetCateArt)
 		router.GET("article/info/:id", v1.GetArtInfo)
+
+		// 登录控制模块
+		router.POST("login", v1.Login)
+		router.POST("loginfront", v1.LoginFront)
 	}
 	// fmt.Println(utils.HttpPort)
 	r.Run(utils.HttpPort)

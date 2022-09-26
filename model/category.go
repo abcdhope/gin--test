@@ -40,8 +40,8 @@ func GetCateInfo(id int) (Category, int) {
 func GetCate(pageSize, pageNum int) ([]Category, int64) {
 	var cates []Category
 	var total int64 //类别个数
-	db.Select("name").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&cates)
-	db.Model(&cates).Count(&total)
+	db.Select("name").Limit(pageSize).Offset((pageNum - 1) * pageSize).Find(&cates).Count(&total)
+	// db.Model(&cates).Count(&total)
 	return cates, total
 }
 
