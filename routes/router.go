@@ -38,6 +38,14 @@ func InitRouter() {
 		auth.POST("article/add", v1.AddArticle)
 		auth.PUT("article/:id", v1.EditArt)
 		auth.DELETE("article/:id", v1.DeleteArt)
+		// 更新个人设置
+		auth.GET("admin/profile/:id", v1.GetProfile)
+		auth.PUT("profile/:id", v1.UpdateProfile)
+		// 评论模块
+		auth.GET("comment/list", v1.GetCommentList)
+		auth.DELETE("delcomment/:id", v1.DeleteComment)
+		auth.PUT("checkcomment/:id", v1.CheckComment)
+		auth.PUT("uncheckcomment/:id", v1.UncheckComment)
 	}
 	router := r.Group("api/v1")
 	{
@@ -55,9 +63,18 @@ func InitRouter() {
 		router.GET("article/list/:id", v1.GetCateArt)
 		router.GET("article/info/:id", v1.GetArtInfo)
 
+		// 获取个人设置信息
+		router.GET("profile/:id", v1.GetProfile)
+
 		// 登录控制模块
 		router.POST("login", v1.Login)
 		router.POST("loginfront", v1.LoginFront)
+
+		// 评论模块
+		router.POST("addcomment", v1.AddComment)
+		router.GET("comment/info/:id", v1.GetComment)
+		router.GET("commentfront/:id", v1.GetCommentListFront)
+		router.GET("commentcount/:id", v1.GetCommentCount)
 	}
 	// fmt.Println(utils.HttpPort)
 	r.Run(utils.HttpPort)
